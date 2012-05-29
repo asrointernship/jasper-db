@@ -18,23 +18,14 @@ import java.util.Properties;
  *
  * @author Jasper Moeys
  */
-public class TwitterMongoDatabase implements Database<Tweet> {
-    
-    private DBCollection collection;
+public class TwitterMongoDatabase extends AbstractMongoDatabase<Tweet> {
     
     public TwitterMongoDatabase(Mongo mongo, Properties properties) throws SocialMapException{
-        String dbName = properties.getProperty("databaseName");
-        String collectionName = properties.getProperty("twitterCollection");
-        
-        if(dbName==null)
-            throw new SocialMapException("The 'databaseName' property can't be null.");
-        if(collectionName==null)
-            throw new SocialMapException("The 'twitterCollection' property can't be null.");
-        
-        collection = mongo.getDB(dbName).getCollection(collectionName);
+        super(mongo, properties, "twitterCollection");
     }
     
-    private Tweet toTweet(DBObject doc){
+    @Override
+    protected Tweet toT(DBObject doc){
         Object idObj = doc.get("_id");
         Long id = null;
         if(idObj instanceof Long)
@@ -57,17 +48,19 @@ public class TwitterMongoDatabase implements Database<Tweet> {
             to_user_id = ((Integer)toidObj).longValue();
         
         float latitude = 0;
-        if(doc.get("latitude") instanceof Double){
-            latitude = ((Double)doc.get("latitude")).floatValue();
-        } else if(doc.get("latitude") instanceof Integer){
-            latitude = ((Integer)doc.get("latitude")).floatValue();
+        Object latObj = doc.get("latitude");
+        if(latObj instanceof Double){
+            latitude = ((Double)latObj).floatValue();
+        } else if(latObj instanceof Integer){
+            latitude = ((Integer)latObj).floatValue();
         }
         
         float longitude = 0;
-        if(doc.get("longitude") instanceof Double){
-            longitude = ((Double)doc.get("longitude")).floatValue();
-        } else if(doc.get("longitude") instanceof Integer){
-            longitude = ((Integer)doc.get("longitude")).floatValue();
+        Object lngObj = doc.get("longitude");
+        if(lngObj instanceof Double){
+            longitude = ((Double)lngObj).floatValue();
+        } else if(lngObj instanceof Integer){
+            longitude = ((Integer)lngObj).floatValue();
         }
         
         String text = (String)doc.get("text");
@@ -78,7 +71,8 @@ public class TwitterMongoDatabase implements Database<Tweet> {
         return new Tweet(id, latitude, longitude, text, created_at, from_user_id, from_user, to_user_id, to_user);
     }
     
-    private DBObject toDBObject(Tweet tweet){
+    @Override
+    protected DBObject toDBObject(Tweet tweet){
         BasicDBObject doc = new BasicDBObject();
         doc.append("_id", tweet.getId());
         doc.append("latitude", (double)tweet.getLatitude());
@@ -94,56 +88,8 @@ public class TwitterMongoDatabase implements Database<Tweet> {
     }
 
     @Override
-    public List<Tweet> getAll() {
-        int count = (int) collection.count();
-        List<Tweet> list = new ArrayList<Tweet>(count);
-        DBCursor find = collection.find();
-        for(DBObject doc: find){
-            list.add(toTweet(doc));
-        }
-        return list;
-    }
-
-    @Override
-    public Tweet getOne(Object id) {
-        BasicDBObject query = new BasicDBObject("_id", id);
-        DBObject doc = collection.findOne(query);
-        if(doc != null)
-            return toTweet(doc);
-        else
-            return null;
-    }
-
-    @Override
-    public boolean update(Tweet element) {
-        BasicDBObject query = new BasicDBObject("_id", element.getId());
-        WriteResult res = collection.update(query, toDBObject(element));
-        boolean ok = false;
-        if(res.getN()>0)
-            ok = true;
-        
-        return ok;
-    }
-
-    @Override
-    public boolean insert(Tweet element) {
-        WriteResult res = collection.insert(toDBObject(element));
-        boolean ok = false;
-        if(res.getN()>0)
-            ok = true;
-        
-        return ok;
-    }
-
-    @Override
-    public boolean remove(Tweet element) {
-        BasicDBObject query = new BasicDBObject("_id", element.getId());
-        WriteResult res = collection.remove(query);
-        boolean ok = false;
-        if(res.getN()>0)
-            ok = true;
-        
-        return ok;
+    protected Object getElementId(Tweet element) {
+        return element.getId();
     }
     
 }

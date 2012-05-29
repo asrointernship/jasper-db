@@ -16,25 +16,14 @@ import java.util.Properties;
  *
  * @author Jasper Moeys
  */
-public class FsVenueMongoDatabase implements Database<FoursquareVenue> {
-
-    private DBCollection collection;
+public class FsVenueMongoDatabase extends AbstractMongoDatabase<FoursquareVenue> {
 
     public FsVenueMongoDatabase(Mongo mongo, Properties properties) throws SocialMapException {
-        String dbName = properties.getProperty("databaseName");
-        String collectionName = properties.getProperty("fsVenueCollection");
-
-        if (dbName == null) {
-            throw new SocialMapException("The 'databaseName' property can't be null.");
-        }
-        if (collectionName == null) {
-            throw new SocialMapException("The 'fsVenueCollection' property can't be null.");
-        }
-
-        collection = mongo.getDB(dbName).getCollection(collectionName);
+        super(mongo, properties, "fsVenueCollection");
     }
 
-    private DBObject toDBObject(FoursquareVenue venue) {
+    @Override
+    protected DBObject toDBObject(FoursquareVenue venue) {
         BasicDBObject doc = new BasicDBObject();
         doc.append("_id", venue.getId());
         doc.append("latitude", (double) venue.getLatitude());
@@ -47,21 +36,24 @@ public class FsVenueMongoDatabase implements Database<FoursquareVenue> {
         return doc;
     }
 
-    private FoursquareVenue toFoursquareVenue(DBObject doc) {
+    @Override
+    protected FoursquareVenue toT(DBObject doc) {
         String id = (String) doc.get("_id");
 
         float latitude = 0;
-        if (doc.get("latitude") instanceof Double) {
-            latitude = ((Double) doc.get("latitude")).floatValue();
-        } else if (doc.get("latitude") instanceof Integer) {
-            latitude = ((Integer) doc.get("latitude")).floatValue();
+        Object latObj = doc.get("latitude");
+        if(latObj instanceof Double){
+            latitude = ((Double)latObj).floatValue();
+        } else if(latObj instanceof Integer){
+            latitude = ((Integer)latObj).floatValue();
         }
-
+        
         float longitude = 0;
-        if (doc.get("longitude") instanceof Double) {
-            longitude = ((Double) doc.get("longitude")).floatValue();
-        } else if (doc.get("longitude") instanceof Integer) {
-            longitude = ((Integer) doc.get("longitude")).floatValue();
+        Object lngObj = doc.get("longitude");
+        if(lngObj instanceof Double){
+            longitude = ((Double)lngObj).floatValue();
+        } else if(lngObj instanceof Integer){
+            longitude = ((Integer)lngObj).floatValue();
         }
 
         String name = (String) doc.get("name");
@@ -90,59 +82,7 @@ public class FsVenueMongoDatabase implements Database<FoursquareVenue> {
     }
 
     @Override
-    public List<FoursquareVenue> getAll() {
-        int count = (int) collection.count();
-        List<FoursquareVenue> list = new ArrayList<FoursquareVenue>(count);
-        DBCursor find = collection.find();
-        for (DBObject doc : find) {
-            list.add(toFoursquareVenue(doc));
-        }
-        return list;
-    }
-
-    @Override
-    public FoursquareVenue getOne(Object id) {
-        BasicDBObject query = new BasicDBObject("_id", id);
-        DBObject doc = collection.findOne(query);
-        if (doc != null) {
-            return toFoursquareVenue(doc);
-        } else {
-            return null;
-        }
-    }
-
-    @Override
-    public boolean update(FoursquareVenue element) {
-        BasicDBObject query = new BasicDBObject("_id", element.getId());
-        WriteResult res = collection.update(query, toDBObject(element));
-        boolean ok = false;
-        if (res.getN() > 0) {
-            ok = true;
-        }
-
-        return ok;
-    }
-
-    @Override
-    public boolean insert(FoursquareVenue element) {
-        WriteResult res = collection.insert(toDBObject(element));
-        boolean ok = false;
-        if (res.getN() > 0) {
-            ok = true;
-        }
-
-        return ok;
-    }
-
-    @Override
-    public boolean remove(FoursquareVenue element) {
-        BasicDBObject query = new BasicDBObject("_id", element.getId());
-        WriteResult res = collection.remove(query);
-        boolean ok = false;
-        if (res.getN() > 0) {
-            ok = true;
-        }
-
-        return ok;
+    protected Object getElementId(FoursquareVenue element) {
+        return element.getId();
     }
 }

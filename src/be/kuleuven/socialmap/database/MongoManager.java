@@ -7,6 +7,7 @@ package be.kuleuven.socialmap.database;
 import be.kuleuven.socialmap.exceptions.SocialMapException;
 import be.kuleuven.socialmap.model.FlickrPhoto;
 import be.kuleuven.socialmap.model.FoursquareVenue;
+import be.kuleuven.socialmap.model.InstagramPhoto;
 import be.kuleuven.socialmap.model.MapReduceResult;
 import be.kuleuven.socialmap.model.Plottable;
 import be.kuleuven.socialmap.model.Tweet;
@@ -26,6 +27,7 @@ import java.util.Properties;
  * <li><b>twitterCollection</b> (required): The name of the collection where the tweets are stored.</li>
  * <li><b>flickrCollection</b> (required): The name of the collection where the flickrphotos are stored.</li>
  * <li><b>fsVenueCollection</b> (required): The name of the collection where the foursquareVenues are stored.</li>
+ * <li><b>instagramCollection</b> (required): The name of the collection where the InstagramPhotos are stored.</li>
  * <li><b>"lowerCasedSimpleClassName"Reduced</b> (required): The name of the collection where the result of the MapReduce operation on the collection of the specified type is stored.
  * <ul><li>Example: flickrphotoReduced=MapReducedFlickrCollection</li></ul></li>
  * </ul>
@@ -75,6 +77,10 @@ public class MongoManager extends DatabaseManager {
     
     public Database<FoursquareVenue> foursquarevenue(Object... args) throws SocialMapException{
         return new FsVenueMongoDatabase(mongo, getProperties());
+    }
+    
+    public Database<InstagramPhoto> instagramphoto(Object... args) throws SocialMapException{
+        return new InstagramMongoDatabase(mongo, getProperties());
     }
 
     @Override

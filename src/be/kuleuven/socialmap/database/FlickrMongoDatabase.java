@@ -17,23 +17,14 @@ import java.util.Properties;
  *
  * @author Jasper Moeys
  */
-public class FlickrMongoDatabase implements Database<FlickrPhoto> {
-    
-    private DBCollection collection;
+public class FlickrMongoDatabase extends AbstractMongoDatabase<FlickrPhoto> {
     
     public FlickrMongoDatabase(Mongo mongo, Properties properties) throws SocialMapException{
-        String dbName = properties.getProperty("databaseName");
-        String collectionName = properties.getProperty("flickrCollection");
-        
-        if(dbName==null)
-            throw new SocialMapException("The 'databaseName' property can't be null.");
-        if(collectionName==null)
-            throw new SocialMapException("The 'flickrCollection' property can't be null.");
-        
-        collection = mongo.getDB(dbName).getCollection(collectionName);
+        super(mongo, properties, "flickrCollection");
     }
     
-    private FlickrPhoto toFlickrPhoto(DBObject doc){
+    @Override
+    protected FlickrPhoto toT(DBObject doc){
         Object idObj = doc.get("_id");
         Long id = null;
         if(idObj instanceof Long)
@@ -42,17 +33,19 @@ public class FlickrMongoDatabase implements Database<FlickrPhoto> {
             id = ((Integer)idObj).longValue();
         
         float latitude = 0;
-        if(doc.get("latitude") instanceof Double){
-            latitude = ((Double)doc.get("latitude")).floatValue();
-        } else if(doc.get("latitude") instanceof Integer){
-            latitude = ((Integer)doc.get("latitude")).floatValue();
+        Object latObj = doc.get("latitude");
+        if(latObj instanceof Double){
+            latitude = ((Double)latObj).floatValue();
+        } else if(latObj instanceof Integer){
+            latitude = ((Integer)latObj).floatValue();
         }
         
         float longitude = 0;
-        if(doc.get("longitude") instanceof Double){
-            longitude = ((Double)doc.get("longitude")).floatValue();
-        } else if(doc.get("longitude") instanceof Integer){
-            longitude = ((Integer)doc.get("longitude")).floatValue();
+        Object lngObj = doc.get("longitude");
+        if(lngObj instanceof Double){
+            longitude = ((Double)lngObj).floatValue();
+        } else if(lngObj instanceof Integer){
+            longitude = ((Integer)lngObj).floatValue();
         }
         
         Date dateupload = (Date)doc.get("dateupload");
@@ -65,7 +58,8 @@ public class FlickrMongoDatabase implements Database<FlickrPhoto> {
         return new FlickrPhoto(id, latitude, longitude, dateupload, title, owner, secret, farm, server);
     }
     
-    private DBObject toDBObject(FlickrPhoto flickr){
+    @Override
+    protected DBObject toDBObject(FlickrPhoto flickr){
         BasicDBObject doc = new BasicDBObject();
         doc.append("_id", flickr.getId());
         doc.append("latitude", (double)flickr.getLatitude());
@@ -81,56 +75,9 @@ public class FlickrMongoDatabase implements Database<FlickrPhoto> {
     }
 
     @Override
-    public List<FlickrPhoto> getAll() {
-        int count = (int) collection.count();
-        List<FlickrPhoto> list = new ArrayList<FlickrPhoto>(count);
-        DBCursor find = collection.find();
-        for(DBObject doc: find){
-            list.add(toFlickrPhoto(doc));
-        }
-        return list;
+    protected Object getElementId(FlickrPhoto element) {
+        return element.getId();
     }
 
-    @Override
-    public FlickrPhoto getOne(Object id) {
-        BasicDBObject query = new BasicDBObject("_id", id);
-        DBObject doc = collection.findOne(query);
-        if(doc != null)
-            return toFlickrPhoto(doc);
-        else
-            return null;
-    }
-
-    @Override
-    public boolean update(FlickrPhoto element) {
-        BasicDBObject query = new BasicDBObject("_id", element.getId());
-        WriteResult res = collection.update(query, toDBObject(element));
-        boolean ok = false;
-        if(res.getN()>0)
-            ok = true;
-        
-        return ok;
-    }
-
-    @Override
-    public boolean insert(FlickrPhoto element) {
-        WriteResult res = collection.insert(toDBObject(element));
-        boolean ok = false;
-        if(res.getN()>0)
-            ok = true;
-        
-        return ok;
-    }
-
-    @Override
-    public boolean remove(FlickrPhoto element) {
-        BasicDBObject query = new BasicDBObject("_id", element.getId());
-        WriteResult res = collection.remove(query);
-        boolean ok = false;
-        if(res.getN()>0)
-            ok = true;
-        
-        return ok;
-    }
     
 }
