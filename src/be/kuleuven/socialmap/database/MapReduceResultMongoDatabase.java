@@ -14,7 +14,9 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * The database class for accessing data in a collection that is the result of a MapReduce operation on a collection containing {@link Plottable} data in a mongoDB database.
+ * The database class for accessing data in a collection that is the result of a
+ * MapReduce operation on a collection containing {@link Plottable} data in a
+ * mongoDB database.
  *
  * @author Jasper Moeys
  */
@@ -44,17 +46,22 @@ public class MapReduceResultMongoDatabase implements Database<MapReduceResult> {
         int count = (int) collection.count();
         List<MapReduceResult> list = new ArrayList<MapReduceResult>(count);
         DBCursor find = collection.find();
-        for(DBObject doc: find){
+        for (DBObject doc : find) {
             list.add(toMapReduceResult(doc));
         }
         return list;
     }
 
+    /**
+     * @param id In this case the id has to be either an ArrayList or a float[]
+     * with at index 0 the latitude and at index 1 the longitude, a Map with
+     * latitude and longitude key-value pairs, or a {@link Plottable}.
+     */
     @Override
     public MapReduceResult getOne(Object id) {
         MapReduceResult res = null;
         BasicDBObject latlng = null;
-        if (id instanceof List) {
+        if (id instanceof ArrayList) {
             List<Object> list = (List<Object>) id;
             if (list.size() == 2) {
                 Object latitude = list.get(0);
@@ -63,6 +70,20 @@ public class MapReduceResultMongoDatabase implements Database<MapReduceResult> {
                 latlng.put("latitude", latitude);
                 latlng.put("longitude", longitude);
             }
+        } else if (id instanceof float[]) {
+            float[] array = (float[]) id;
+            if (array.length == 2) {
+                Object latitude = array[0];
+                Object longitude = array[1];
+                latlng = new BasicDBObject();
+                latlng.put("latitude", latitude);
+                latlng.put("longitude", longitude);
+            }
+        } else if (id instanceof Plottable) {
+            Plottable pl = (Plottable) id;
+            latlng = new BasicDBObject();
+            latlng.put("latitude", pl.getLatitude());
+            latlng.put("longitude", pl.getLongitude());
         } else if (id instanceof Map) {
             Map map = (Map) id;
             latlng = new BasicDBObject(map);
@@ -94,33 +115,33 @@ public class MapReduceResultMongoDatabase implements Database<MapReduceResult> {
 
     private MapReduceResult toMapReduceResult(DBObject doc) {
         DBObject id = (DBObject) doc.get("_id");
-        
+
         float latitude = 0;
-        if(id.get("latitude") instanceof Double){
-            latitude = ((Double)id.get("latitude")).floatValue();
-        } else if(id.get("latitude") instanceof Integer){
-            latitude = ((Integer)id.get("latitude")).floatValue();
+        if (id.get("latitude") instanceof Double) {
+            latitude = ((Double) id.get("latitude")).floatValue();
+        } else if (id.get("latitude") instanceof Integer) {
+            latitude = ((Integer) id.get("latitude")).floatValue();
         }
-        
+
         float longitude = 0;
-        if(id.get("longitude") instanceof Double){
-            longitude = ((Double)id.get("longitude")).floatValue();
-        } else if(id.get("longitude") instanceof Integer){
-            longitude = ((Integer)id.get("longitude")).floatValue();
+        if (id.get("longitude") instanceof Double) {
+            longitude = ((Double) id.get("longitude")).floatValue();
+        } else if (id.get("longitude") instanceof Integer) {
+            longitude = ((Integer) id.get("longitude")).floatValue();
         }
-        
+
         DBObject value = (DBObject) doc.get("value");
         int count = 0;
-        if(value.get("count") instanceof Double){
-            count = ((Double)value.get("count")).intValue();
-        } else if(value.get("count") instanceof Long){
-            count = ((Long)value.get("count")).intValue();
-        } else if(value.get("count") instanceof Integer){
-            count = ((Integer)value.get("count"));
+        if (value.get("count") instanceof Double) {
+            count = ((Double) value.get("count")).intValue();
+        } else if (value.get("count") instanceof Long) {
+            count = ((Long) value.get("count")).intValue();
+        } else if (value.get("count") instanceof Integer) {
+            count = ((Integer) value.get("count"));
         }
-        
-        List<Object> ids = new ArrayList((List)value.get("ids"));
-        
+
+        List<Object> ids = new ArrayList((List) value.get("ids"));
+
         return new MapReduceResult(latitude, longitude, ids, count, this.type);
     }
 }
