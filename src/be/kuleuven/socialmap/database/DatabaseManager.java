@@ -64,5 +64,10 @@ public abstract class DatabaseManager {
         super.finalize();
     }
 
+    /**
+     * Closes the database connections that this DatabaseManager is holding.
+     * 
+     * @throws SocialMapException 
+     */
     public abstract void closeConnection() throws SocialMapException;
 }

@@ -109,4 +109,12 @@ public class DatabaseFactory {
         }
         return db;
     }
+    
+    /**
+     * Close the database connections.
+     */
+    public static void closeConnections() throws SocialMapException{
+        if(manager != null)
+            manager.closeConnection();
+    }
 }
