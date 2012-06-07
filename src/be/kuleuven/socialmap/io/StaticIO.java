@@ -181,4 +181,14 @@ public class StaticIO {
     public static void writeToFile(String filename, String content) throws IOException {
         writeToFile(filename, content, true);
     }
+    
+    /**
+     * A method that returns the absolute path to a file.
+     * 
+     * @param file The path to a file, relative to the {@link StaticIO#setCurrentDirectory(java.lang.String) current directory}.
+     * @return The absolute path to the file.
+     */
+    public static String getPath(String file){
+        return getCurrentDirectory() + file;
+    }
 }
